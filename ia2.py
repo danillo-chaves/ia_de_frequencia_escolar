@@ -7,7 +7,7 @@ from tkinter import *
 from tkinter import messagebox
 
 # Criado dentro do diretório trabalho_ia, a pasta know_faces que é onde irá ficar as imagens para o treinamento.
-def load_reference_images(path='trabalho_ia/known_faces'):
+def load_reference_images(path='ia_de_frequencia_escolar/known_faces'):
     known_face_encodings = []
     known_face_names = []
 
