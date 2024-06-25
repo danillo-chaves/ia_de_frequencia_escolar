@@ -7,18 +7,28 @@ from tkinter import *
 from tkinter import messagebox
 
 # Carregar imagens de referência e codificar faces
-def load_reference_images(path='trabalho_ia/known_faces'):
+def load_reference_images(path='known_faces'):
     known_face_encodings = []
     known_face_names = []
     
     for file_name in os.listdir(path):
         image_path = os.path.join(path, file_name)
-        image = face_recognition.load_image_file(image_path)
-        encoding = face_recognition.face_encodings(image)[0]
+        try:
+            image = face_recognition.load_image_file(image_path)
+            
+            # Convertendo para RGB, se necessário
+            if len(image.shape) == 2:  # Se a imagem for escala de cinza (2D)
+                image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            elif image.shape[2] == 4:  # Se a imagem tiver 4 canais (RGBA)
+                image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+            
+            encoding = face_recognition.face_encodings(image)[0]
+            known_face_encodings.append(encoding)
+            known_face_names.append(os.path.splitext(file_name)[0])
         
-        known_face_encodings.append(encoding)
-        known_face_names.append(os.path.splitext(file_name)[0])
-        
+        except Exception as e:
+            print(f'Erro ao processar imagem {image_path}: {str(e)}')
+    
     return known_face_encodings, known_face_names
 
 # Marcar presença
