@@ -1,0 +1,67 @@
+import cv2
+import numpy as np
+import os
+from sklearn.neighbors import KNeighborsClassifier
+
+# Diretório contendo imagens de rostos conhecidos
+KNOWN_FACES_DIR = 'known_faces'
+# Parâmetros
+FACE_SIZE = (150, 150)
+
+# Função para carregar imagens e labels
+def load_known_faces(directory):
+    faces = []
+    labels = []
+    for label in os.listdir(directory):
+        label_dir = os.path.join(directory, label)
+        if not os.path.isdir(label_dir):
+            continue
+        for filename in os.listdir(label_dir):
+            path = os.path.join(label_dir, filename)
+            image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            image = cv2.resize(image, FACE_SIZE)
+            faces.append(image.flatten())
+            labels.append(label)
+    return np.array(faces), np.array(labels)
+
+# Carregar imagens de rostos conhecidos
+faces, labels = load_known_faces(KNOWN_FACES_DIR)
+
+# Treinar o modelo de reconhecimento
+model = KNeighborsClassifier(n_neighbors=3)
+model.fit(faces, labels)
+
+print("Modelo treinado com sucesso.")
+
+# Inicializar a webcam
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Detectar rostos na imagem capturada
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    for (x, y, w, h) in faces:
+        face = gray[y:y+h, x:x+w]
+        face_resized = cv2.resize(face, FACE_SIZE).flatten()
+        face_resized = face_resized.reshape(1, -1)  # Transforma em uma matriz 2D
+        
+        # Reconhecer o rosto
+        label = model.predict(face_resized)[0]
+        
+        # Desenhar o retângulo e o label
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+    
+    # Mostrar a imagem
+    cv2.imshow('Reconhecimento Facial', frame)
+    
+    # Parar o loop ao pressionar a tecla 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Liberar a webcam e fechar janelas
+cap.release()
+cv2.destroyAllWindows()
