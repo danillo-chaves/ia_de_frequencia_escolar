@@ -10,6 +10,10 @@ from tkinter import messagebox
 def load_reference_images(path='known_faces'):
     known_face_encodings = []
     known_face_names = []
+
+    if not os.path.exists(path):
+        print(f"O diretório {path} não existe.")
+        return known_face_encodings, known_face_names
     
     for file_name in os.listdir(path):
         image_path = os.path.join(path, file_name)
