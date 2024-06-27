@@ -44,6 +44,8 @@ def save_new_face(image, name):
 
 # Carregar imagens de rostos conhecidos
 faces, labels = load_known_faces(KNOWN_FACES_DIR)
+if faces.size == 0:
+    raise ValueError("Nenhuma imagem de rosto conhecida encontrada.")
 
 # Verificar se faces e labels não estão vazios
 if faces.size == 0 or labels.size == 0:
@@ -66,6 +68,9 @@ root.title("Reconhecimento Facial")
 
 # Iniciar a webcam
 cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    raise IOError("Não foi possível abrir a webcam.")
+
 
 # Função para exibir o frame da webcam na GUI
 def update_frame():
@@ -152,9 +157,13 @@ start_button.pack(side="left")
 quit_button = Button(root, text="Sair", command=root.quit)
 quit_button.pack(side="right")
 
+# Função para liberar recursos ao sair
+def on_closing():
+    cap.release()
+    cv2.destroyAllWindows()
+    root.quit()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 # Iniciar o loop principal do Tkinter
 root.mainloop()
-
-# Liberar a webcam e fechar janelas
-cap.release()
-cv2.destroyAllWindows()
