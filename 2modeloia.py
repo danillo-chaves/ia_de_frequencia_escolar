@@ -22,6 +22,9 @@ def load_known_faces(directory):
         for filename in os.listdir(label_dir):
             path = os.path.join(label_dir, filename)
             image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                print(f"Erro ao carregar imagem: {path}")
+                continue
             image = cv2.resize(image, FACE_SIZE)
             faces.append(image.flatten())
             labels.append(label)
@@ -29,6 +32,8 @@ def load_known_faces(directory):
 
 # Carregar imagens de rostos conhecidos
 faces, labels = load_known_faces(KNOWN_FACES_DIR)
+if faces.size == 0:
+    raise ValueError("Nenhuma imagem de rosto conhecida encontrada.")
 
 # Treinar o modelo de reconhecimento
 model = KNeighborsClassifier(n_neighbors=3)
@@ -42,6 +47,9 @@ root.title("Reconhecimento Facial")
 
 # Iniciar a webcam
 cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    raise IOError("Não foi possível abrir a webcam.")
+
 
 # Função para exibir o frame da webcam na GUI
 def update_frame():
@@ -84,9 +92,13 @@ start_button.pack(side="left")
 quit_button = Button(root, text="Sair", command=root.quit)
 quit_button.pack(side="right")
 
+# Função para liberar recursos ao sair
+def on_closing():
+    cap.release()
+    cv2.destroyAllWindows()
+    root.quit()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 # Iniciar o loop principal do Tkinter
 root.mainloop()
-
-# Liberar a webcam e fechar janelas
-cap.release()
-cv2.destroyAllWindows()
