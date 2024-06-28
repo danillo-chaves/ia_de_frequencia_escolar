@@ -6,11 +6,26 @@ import tkinter as tk
 from tkinter import Label, Button, Entry
 from PIL import Image, ImageTk
 from datetime import datetime
-import pickle
+import pickle  # Importando o módulo pickle
+import logging
 
+# Configuração do log
+logging.basicConfig(
+    filename='2modelo.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Função para registrar eventos no log
+def log_event(event):
+    logging.info(event)
 
 # Diretório contendo imagens de rostos conhecidos
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 KNOWN_FACES_DIR = 'known_faces2'
+MODEL_DIR = 'models/modelo_treinado.pkl'
+
 # Parâmetros
 FACE_SIZE = (150, 150)
 
@@ -26,12 +41,12 @@ def load_known_faces(directory):
             path = os.path.join(label_dir, filename)
             image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
             if image is None:
+                log_event(f"Falha ao carregar a imagem: {path}")
                 continue
             image = cv2.resize(image, FACE_SIZE)
             faces.append(image.flatten())
             labels.append(label)
-    if not faces or not labels:
-        raise ValueError("Nenhuma imagem ou label foi carregada.")
+    log_event(f"Faces e labels carregados de {directory}")
     return np.array(faces), np.array(labels)
 
 # Função para salvar nova face
@@ -41,58 +56,71 @@ def save_new_face(image, name):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_path = os.path.join(new_face_dir, f"{timestamp}.jpg")
     cv2.imwrite(file_path, image)
-    print(f"Imagem salva em: {file_path}")
+    log_event(f"Nova face salva para {name} em {file_path}")
+    retrain_model()  # Chama a função para re-treinar o modelo após salvar a nova face
+
+# Função para re-treinar o modelo
+def retrain_model():
+    global model, faces, labels
+    faces, labels = load_known_faces(KNOWN_FACES_DIR)
+    n_neighbors = min(3, len(labels))
+    if n_neighbors < 1:
+        log_event("Número insuficiente de amostras para treinamento.")
+        print("Número insuficiente de amostras para treinamento.")
+        return
+    model = KNeighborsClassifier(n_neighbors=n_neighbors)
+    model.fit(faces, labels)
+    log_event("Modelo re-treinado com sucesso.")
+    print("Modelo re-treinado com sucesso.")
+    save_model(model, MODEL_DIR)  # Salva o modelo após o re-treinamento
 
 # Função para salvar o modelo treinado
 def save_model(model, path):
     with open(path, 'wb') as f:
         pickle.dump(model, f)
+    log_event(f"Modelo salvo em: {path}")
     print(f"Modelo salvo em: {path}")
 
 # Função para carregar o modelo treinado
 def load_model(path):
     with open(path, 'rb') as f:
+        log_event(f"Modelo carregado de: {path}")
         return pickle.load(f)
-
-# Função para registrar log
-def log_message(message):
-    with open(LOG_FILE, 'a') as f:
-        f.write(f"{datetime.now()}: {message}\n")
-
-# Carregar imagens de rostos conhecidos
-faces, labels = load_known_faces(KNOWN_FACES_DIR)
-if faces.size == 0:
-    raise ValueError("Nenhuma imagem de rosto conhecida encontrada.")
-
-# Verificar se faces e labels não estão vazios
-if faces.size == 0 or labels.size == 0:
-    raise ValueError("Os dados de faces ou labels estão vazios.")
-
-# Ajustar n_neighbors dinamicamente
-n_neighbors = min(3, len(labels))
-if n_neighbors < 1:
-    raise ValueError("Número insuficiente de amostras para treinamento.")
-
-# Treinar o modelo de reconhecimento
-model = KNeighborsClassifier(n_neighbors=n_neighbors)
-model.fit(faces, labels)
-
-print("Modelo treinado com sucesso.")
 
 # Inicializar o Tkinter
 root = tk.Tk()
 root.title("Reconhecimento Facial")
+log_event("Interface Tkinter inicializada.")
 
 # Iniciar a webcam
 cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    raise IOError("Não foi possível abrir a webcam.")
+log_event("Webcam iniciada.")
 
+# Carregar ou criar o modelo
+model_path = 'knn_model.pkl'
+if os.path.exists(model_path):
+    model = load_model(model_path)
+    log_event("Modelo carregado com sucesso.")
+else:
+    faces, labels = load_known_faces(KNOWN_FACES_DIR)
+    if faces.size == 0 or labels.size == 0:
+        log_event("Os dados de faces ou labels estão vazios.")
+        raise ValueError("Os dados de faces ou labels estão vazios.")
+
+    n_neighbors = min(3, len(labels))
+    if n_neighbors < 1:
+        log_event("Número insuficiente de amostras para treinamento.")
+        raise ValueError("Número insuficiente de amostras para treinamento.")
+    model = KNeighborsClassifier(n_neighbors=n_neighbors)
+    model.fit(faces, labels)
+    log_event("Modelo treinado com sucesso.")
+    save_model(model, MODEL_DIR)
 
 # Função para exibir o frame da webcam na GUI
 def update_frame():
     ret, frame = cap.read()
     if not ret:
+        log_event("Falha ao capturar o frame da webcam.")
         return
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -108,12 +136,13 @@ def update_frame():
             # Reconhecer o rosto
             label = model.predict(face_resized)[0]
         except ValueError as e:
-            print(f"Erro ao prever: {e}")
+            log_event(f"Erro ao prever: {e}")
             continue
         
         # Desenhar o retângulo e o label
         cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
         cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        log_event(f"Rosto reconhecido: {label} em ({x}, {y}, {w}, {h})")
 
     # Convertendo o frame para exibição no Tkinter
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -131,6 +160,7 @@ def update_frame():
 def capture_new_image():
     ret, frame = cap.read()
     if not ret:
+        log_event("Erro ao capturar a imagem.")
         print("Erro ao capturar a imagem.")
         return
     
@@ -140,6 +170,7 @@ def capture_new_image():
     detected_faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
     if len(detected_faces) == 0:
+        log_event("Nenhum rosto detectado.")
         print("Nenhum rosto detectado.")
         return
     
@@ -150,10 +181,12 @@ def capture_new_image():
     # Solicitar o nome
     new_name = name_entry.get()
     if not new_name:
+        log_event("Nome não fornecido ao tentar capturar nova face.")
         print("Por favor, insira um nome.")
         return
     
     save_new_face(face_resized, new_name)
+    log_event(f"Nova face para {new_name} capturada e salva.")
     print(f"Nova face para {new_name} capturada e salva.")
     name_entry.delete(0, tk.END)  # Limpar a entrada do nome
 
@@ -174,13 +207,13 @@ start_button.pack(side="left")
 quit_button = Button(root, text="Sair", command=root.quit)
 quit_button.pack(side="right")
 
-# Função para liberar recursos ao sair
-def on_closing():
-    cap.release()
-    cv2.destroyAllWindows()
-    root.quit()
-
-root.protocol("WM_DELETE_WINDOW", on_closing)
+log_event("Interface gráfica configurada.")
 
 # Iniciar o loop principal do Tkinter
 root.mainloop()
+log_event("Loop principal do Tkinter iniciado.")
+
+# Liberar a webcam e fechar janelas
+cap.release()
+cv2.destroyAllWindows()
+log_event
