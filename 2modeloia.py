@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import Label, Button, Entry
 from PIL import Image, ImageTk
 from datetime import datetime
+import pickle
 
 
 # Diretório contendo imagens de rostos conhecidos
@@ -41,6 +42,22 @@ def save_new_face(image, name):
     file_path = os.path.join(new_face_dir, f"{timestamp}.jpg")
     cv2.imwrite(file_path, image)
     print(f"Imagem salva em: {file_path}")
+
+# Função para salvar o modelo treinado
+def save_model(model, path):
+    with open(path, 'wb') as f:
+        pickle.dump(model, f)
+    print(f"Modelo salvo em: {path}")
+
+# Função para carregar o modelo treinado
+def load_model(path):
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
+# Função para registrar log
+def log_message(message):
+    with open(LOG_FILE, 'a') as f:
+        f.write(f"{datetime.now()}: {message}\n")
 
 # Carregar imagens de rostos conhecidos
 faces, labels = load_known_faces(KNOWN_FACES_DIR)
