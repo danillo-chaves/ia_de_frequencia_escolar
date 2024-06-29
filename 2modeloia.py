@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import Label, Button, Entry
 from PIL import Image, ImageTk
 from datetime import datetime
-import pickle  # Importando o módulo pickle
+import pickle
 import logging
 
 # Configuração do log
@@ -57,7 +57,7 @@ def save_new_face(image, name):
     file_path = os.path.join(new_face_dir, f"{timestamp}.jpg")
     cv2.imwrite(file_path, image)
     log_event(f"Nova face salva para {name} em {file_path}")
-    retrain_model()  # Chama a função para re-treinar o modelo após salvar a nova face
+    retrain_model()
 
 # Função para re-treinar o modelo
 def retrain_model():
@@ -72,7 +72,7 @@ def retrain_model():
     model.fit(faces, labels)
     log_event("Modelo re-treinado com sucesso.")
     print("Modelo re-treinado com sucesso.")
-    save_model(model, MODEL_DIR)  # Salva o modelo após o re-treinamento
+    save_model(model, MODEL_DIR)
 
 # Função para salvar o modelo treinado
 def save_model(model, path):
@@ -135,14 +135,17 @@ def update_frame():
         try:
             # Reconhecer o rosto
             label = model.predict(face_resized)[0]
+            proba = model.predict_proba(face_resized)
+            confidence = np.max(proba) * 100  # Obter a confiança da previsão
         except ValueError as e:
             log_event(f"Erro ao prever: {e}")
             continue
         
-        # Desenhar o retângulo e o label
+        # Desenhar o retângulo e o label com a confiança
+        text = f"{label} ({confidence:.2f}%)"
         cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-        cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
-        log_event(f"Rosto reconhecido: {label} em ({x}, {y}, {w}, {h})")
+        cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        log_event(f"Rosto reconhecido: {text} em ({x}, {y}, {w}, {h})")
 
     # Convertendo o frame para exibição no Tkinter
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -164,7 +167,6 @@ def capture_new_image():
         print("Erro ao capturar a imagem.")
         return
     
-    # Converter para grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     detected_faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -178,7 +180,6 @@ def capture_new_image():
     face = gray[y:y+h, x:x+w]
     face_resized = cv2.resize(face, FACE_SIZE)
 
-    # Solicitar o nome
     new_name = name_entry.get()
     if not new_name:
         log_event("Nome não fornecido ao tentar capturar nova face.")
@@ -216,4 +217,3 @@ log_event("Loop principal do Tkinter iniciado.")
 # Liberar a webcam e fechar janelas
 cap.release()
 cv2.destroyAllWindows()
-log_event
