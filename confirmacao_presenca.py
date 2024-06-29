@@ -26,6 +26,8 @@ def load_reference_images(path='trabalho_ia/known_faces'):
             encoding = face_recognition.face_encodings(image)[0]
             known_face_encodings.append(encoding)
             known_face_names.append(os.path.splitext(file_name)[0])
+        except IndexError:
+                print(f"Não foi possível codificar a imagem {file_name}. Certifique-se de que a imagem contém um rosto claro.")            
 
     return known_face_encodings, known_face_names
 
