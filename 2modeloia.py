@@ -97,7 +97,7 @@ cap = cv2.VideoCapture(0)
 log_event("Webcam iniciada.")
 
 # Carregar ou criar o modelo
-model_path = 'knn_model.pkl'
+model_path = MODEL_DIR
 if os.path.exists(model_path):
     model = load_model(model_path)
     log_event("Modelo carregado com sucesso.")
