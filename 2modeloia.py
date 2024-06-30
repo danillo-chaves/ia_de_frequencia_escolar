@@ -3,7 +3,7 @@ import numpy as np
 import os
 from sklearn.neighbors import KNeighborsClassifier
 import tkinter as tk
-from tkinter import Label, Button, Entry
+from tkinter import Label, Button, Entry, messagebox
 from PIL import Image, ImageTk
 from datetime import datetime
 import pickle
@@ -195,8 +195,14 @@ def list_registered_names():
     if not os.path.exists(KNOWN_FACES_DIR):
         messagebox.showinfo("Info", "Nenhum rosto conhecido registrado.")
         return
+    
     names = os.listdir(KNOWN_FACES_DIR)
-    messagebox.showinfo("Rostos Registrados", "\n".join(names))
+    if not names:
+        messagebox.showinfo("Info", "Nenhum rosto conhecido registrado.")
+    else:
+        messagebox.showinfo("Rostos Registrados", "\n".join(names))
+
+list_registered_names()
 
 # Configuração da interface gráfica
 display_label = Label(root)
