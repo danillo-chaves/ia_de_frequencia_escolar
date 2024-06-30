@@ -3,7 +3,7 @@ import numpy as np
 import os
 from sklearn.neighbors import KNeighborsClassifier
 import tkinter as tk
-from tkinter import Label, Button, Entry, messagebox
+from tkinter import Label, Button, Entry, messagebox, Listbox, Scrollbar
 from PIL import Image, ImageTk
 from datetime import datetime
 import pickle
@@ -191,6 +191,7 @@ def capture_new_image():
     print(f"Nova face para {new_name} capturada e salva.")
     name_entry.delete(0, tk.END)  # Limpar a entrada do nome
 
+# Função para listar nomes registrados
 def list_registered_names():
     if not os.path.exists(KNOWN_FACES_DIR):
         messagebox.showinfo("Info", "Nenhum rosto conhecido registrado.")
@@ -200,9 +201,36 @@ def list_registered_names():
     if not names:
         messagebox.showinfo("Info", "Nenhum rosto conhecido registrado.")
     else:
-        messagebox.showinfo("Rostos Registrados", "\n".join(names))
+        show_registered_names(names)
 
-list_registered_names()
+# Função para exibir os nomes na interface gráfica
+def show_registered_names(names):
+    # Criar uma nova janela
+    root = tk.Tk()
+    root.title("Rostos Registrados")
+    
+    # Criar uma Listbox para exibir os nomes
+    listbox = Listbox(root)
+    listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+    
+    # Adicionar os nomes à Listbox
+    for name in names:
+        listbox.insert(tk.END, name)
+    
+    # Adicionar uma barra de rolagem à Listbox
+    scrollbar = Scrollbar(root, orient=tk.VERTICAL)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    scrollbar.config(command=listbox.yview)
+    listbox.config(yscrollcommand=scrollbar.set)
+    
+    # Botão para fechar a janela
+    close_button = tk.Button(root, text="Fechar", command=root.destroy)
+    close_button.pack(pady=10)
+    
+    # Executar o loop principal do Tkinter
+    root.mainloop()
+
+
 
 # Configuração da interface gráfica
 display_label = Label(root)
@@ -226,7 +254,8 @@ log_event("Interface gráfica configurada.")
 # Iniciar o loop principal do Tkinter
 root.mainloop()
 log_event("Loop principal do Tkinter iniciado.")
-
+# Exemplo de uso:
+list_registered_names()
 # Liberar a webcam e fechar janelas
 cap.release()
 cv2.destroyAllWindows()
