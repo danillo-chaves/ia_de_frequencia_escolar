@@ -26,17 +26,16 @@ def load_reference_images(path='trabalho_ia/known_faces'):
             encoding = face_recognition.face_encodings(image)[0]
             known_face_encodings.append(encoding)
             known_face_names.append(os.path.splitext(file_name)[0])
-        except IndexError:
-                print(f"Não foi possível codificar a imagem {file_name}. Certifique-se de que a imagem contém um rosto claro.")            
 
     return known_face_encodings, known_face_names
 
 # Função para marcar a presença e enviar e-mail
 def mark_attendance(name):
     email_dict = {
-        # 'name': 'email@example.com'  # Adicione os nomes e e-mails dos alunos aqui
-        'Aluno1': 'aluno1@example.com',
-        'Aluno2': 'aluno2@example.com'
+        # 'name': 'email@example.com', Adicione os nomes e e-mails dos alunos aqui
+        'Aluno1': 'danilo.oliveira@somosicev.com',
+        'Aluno2': 'davi.lopes@somosicev.com',
+        'Aluno3': 'whalisson@hotmail.com'
     }
     
     with open('trabalho_ia/attendance.csv', 'r+') as f:
@@ -53,7 +52,7 @@ def mark_attendance(name):
 
 # Função para enviar e-mail
 def send_email(receiver_email, name):
-    sender_email = 'seu_email@example.com'
+    sender_email = 'danilo.cdo@grupocev.com'
     sender_password = 'sua_senha'
     subject = 'Confirmação de Presença'
     body = f'Olá {name},\n\nSua presença foi marcada com sucesso em {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}.\n\nAtenciosamente,\nEquipe ICEV'
@@ -143,4 +142,4 @@ if __name__ == "__main__":
     app = Application(root)
     root.mainloop()
 
-print(os.getcwd())s
+print(os.getcwd())
