@@ -191,6 +191,13 @@ def capture_new_image():
     print(f"Nova face para {new_name} capturada e salva.")
     name_entry.delete(0, tk.END)  # Limpar a entrada do nome
 
+def list_registered_names():
+    if not os.path.exists(KNOWN_FACES_DIR):
+        messagebox.showinfo("Info", "Nenhum rosto conhecido registrado.")
+        return
+    names = os.listdir(KNOWN_FACES_DIR)
+    messagebox.showinfo("Rostos Registrados", "\n".join(names))
+
 # Configuração da interface gráfica
 display_label = Label(root)
 display_label.pack()
