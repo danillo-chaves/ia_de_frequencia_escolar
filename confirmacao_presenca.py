@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Função para carregar imagens de referência
-def load_reference_images(path='trabalho_ia/known_faces'):
+def load_reference_images(path='known_faces'):
     known_face_encodings = []
     known_face_names = []
 
@@ -35,10 +35,10 @@ def mark_attendance(name):
         # 'name': 'email@example.com', Adicione os nomes e e-mails dos alunos aqui
         'Aluno1': 'danilo.oliveira@somosicev.com',
         'Aluno2': 'davi.lopes@somosicev.com',
-        'Aluno3': 'whalisson@hotmail.com'
+        'Aluno3': 'whalisson.frazao@somosicev.com'
     }
     
-    with open('trabalho_ia/attendance.csv', 'r+') as f:
+    with open('attendance.csv', 'r+') as f:
         lines = f.readlines()
         names = [line.split(',')[0] for line in lines]
 
