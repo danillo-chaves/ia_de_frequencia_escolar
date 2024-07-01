@@ -26,9 +26,12 @@ def load_reference_images(path='known_faces'):
             elif image.shape[2] == 4:  # Se a imagem tiver 4 canais (RGBA)
                 image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
             
-            encoding = face_recognition.face_encodings(image)[0]
-            known_face_encodings.append(encoding)
-            known_face_names.append(os.path.splitext(file_name)[0])
+            encodings = face_recognition.face_encodings(image)
+            if encodings:
+                known_face_encodings.append(encodings[0])
+                known_face_names.append(os.path.splitext(file_name)[0])
+            else:
+                print(f'Nenhuma face encontrada na imagem {image_path}')
         
         except Exception as e:
             print(f'Erro ao processar imagem {image_path}: {str(e)}')
@@ -37,14 +40,18 @@ def load_reference_images(path='known_faces'):
 
 # Marcar presença
 def mark_attendance(name):
-    with open('attendance.csv', 'r+') as f:
-        lines = f.readlines()
-        names = [line.split(',')[0] for line in lines]
-        
-        if name not in names:
-            now = datetime.now()
-            dt_string = now.strftime('%Y-%m-%d %H:%M:%S')
-            f.writelines(f'\n{name},{dt_string}')
+    try:
+        with open('attendance.csv', 'a+') as f:
+            f.seek(0)
+            lines = f.readlines()
+            names = [line.split(',')[0] for line in lines]
+            
+            if name not in names:
+                now = datetime.now()
+                dt_string = now.strftime('%Y-%m-%d %H:%M:%S')
+                f.writelines(f'\n{name},{dt_string}')
+    except Exception as e:
+        print(f'Erro ao marcar presença: {str(e)}')
 
 # Função principal do reconhecimento facial
 def recognize_faces(known_face_encodings, known_face_names):
@@ -52,14 +59,18 @@ def recognize_faces(known_face_encodings, known_face_names):
 
     while True:
         ret, frame = video_capture.read()
-        rgb_frame = frame[:, :, ::-1]
+        if not ret:
+            print("Erro ao capturar imagem da webcam")
+            break
+        
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         face_locations = face_recognition.face_locations(rgb_frame)
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
         for face_encoding, face_location in zip(face_encodings, face_locations):
             matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = " Aluno não identificado! "
+            name = "Aluno não identificado!"
 
             face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
             best_match_index = np.argmin(face_distances)
@@ -94,10 +105,12 @@ class Application:
     
     def start_recognition(self):
         known_face_encodings, known_face_names = load_reference_images()
-        recognize_faces(known_face_encodings, known_face_names)
+        if known_face_encodings:
+            recognize_faces(known_face_encodings, known_face_names)
+        else:
+            messagebox.showwarning("Aviso", "Nenhuma face conhecida carregada.")
 
 if __name__ == "__main__":
     root = Tk()
     app = Application(root)
     root.mainloop()
-
