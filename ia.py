@@ -5,6 +5,10 @@ import os
 from datetime import datetime
 from tkinter import *
 from tkinter import messagebox
+import logging
+
+# Configuração do Logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Carregar imagens de referência e codificar faces
 def load_reference_images(path='known_faces'):
